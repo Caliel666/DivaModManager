@@ -1,12 +1,12 @@
 #! /bin/bash
 modloader=(
-$HOME/.divamodloader
+$HOME/.divamodmanager
 )
 wineprefix=(
-$HOME/.divamodloader/prefix
+$HOME/.divamodmanager/prefix
 )
 dmm=(
-$HOME/.divamodloader/DivaModLoader
+$HOME/.divamodmanager/DivaModManager
 )
 tempfolder=(
 ./tmp
@@ -22,9 +22,9 @@ wget
 
 what do you want to do?
 
-install   >install DivaModLoader
-run       >runs DivaModLoader
-remove    >remove DivaModLoader
+install   >install DivaModManager
+run       >runs DivaModManager
+remove    >remove DivaModManager
 quit      >quit
 
 command> ";
@@ -42,7 +42,7 @@ fi
 
 if [ $REPLY == "install" ]; then
     clear
-    read -p "Do you want to install DivaModLoader ?
+    read -p "Do you want to install DivaModManager ?
 you will be prompted to install .net5, this is an important step.
 
 *please note that if the mod manager tries to auto update, it will break your install
