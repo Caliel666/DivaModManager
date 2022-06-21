@@ -1,6 +1,12 @@
 #! /bin/bash
+modloader=(
+$HOME/.divamodloader
+)
 wineprefix=(
-$HOME/.divamodloader-prefix
+$HOME/.divamodloader/prefix
+)
+dmm=(
+$HOME/.divamodloader/DivaModLoader
 )
 tempfolder=(
 ./tmp
@@ -24,11 +30,9 @@ quit      >quit
 command> ";
 if [ $REPLY == "run" ]; then
     clear
-    WINEPREFIX="${wineprefix[@]}" wine "${wineprefix[@]}/drive_c/Program Files/DivaModLoader/DivaModManager.exe"
+    WINEPREFIX="${wineprefix[@]}" wine "${dmm[@]}/DivaModManager.exe"
     
-    read -p "
-
-enter "q" to go back
+    read -p "enter "q" to go back
 command> ";
     if [ $REPLY == "q" ]; then
     clear;
@@ -47,12 +51,12 @@ yes/no
 command> ";
     if [ $REPLY == "yes" ]; then
     mkdir -p "${tempfolder[@]}";
+    mkdir -p "${dmm[@]}";
     wget https://download.visualstudio.microsoft.com/download/pr/3aa4e942-42cd-4bf5-afe7-fc23bd9c69c5/64da54c8864e473c19a7d3de15790418/windowsdesktop-runtime-5.0.17-win-x64.exe -P "${tempfolder[@]}";
     WINEPREFIX="${wineprefix[@]}" wine "${tempfolder[@]}/"windowsdesktop-runtime-5.0.17-win-x64.exe;
     wget https://github.com/Caliel666/DivaModManager/releases/latest/download/DivaModManager.exe -P "${tempfolder[@]}";
-    mkdir -p "${wineprefix[@]}/drive_c/Program Files/DivaModLoader";
-    cp "${tempfolder[@]}/DivaModManager.exe" "${wineprefix[@]}/drive_c/Program Files/DivaModLoader/";
-    cp "${wineprefix[@]}/drive_c/Program Files/dotnet/host/fxr/5.0.17/hostfxr.dll" "${wineprefix[@]}/drive_c/Program Files/DivaModLoader/";
+    cp "${tempfolder[@]}/DivaModManager.exe" "${dmm[@]}";
+    cp "${wineprefix[@]}/drive_c/Program Files/dotnet/host/fxr/5.0.17/hostfxr.dll" "${dmm[@]}";
     rm -rf "${tempfolder[@]}";
     fi
     if [ $REPLY == "no" ]; then
@@ -81,6 +85,18 @@ yes/no
 command> ";
     if [ $REPLY == "yes" ]; then
     rm -rf "${wineprefix[@]}";
+    read -p "delete everything in $modloader?
+
+yes/no
+command> ";
+        if [ $REPLY == "yes" ]; then
+            rm -rf "${modloader[@]}";
+        fi 
+        if [ $REPLY == "no" ]; then
+     clear;
+    ./divamodmanager-linux.sh;
+        fi
+
     fi
     if [ $REPLY == "no" ]; then
      clear;
