@@ -31,7 +31,7 @@ namespace DivaModManager
             var localVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
             try
             {
-                var owner = "TekkaGB";
+                var owner = "Caliel666";
                 var repo = "DivaModManager";
                 Release release = await client.Repository.Release.GetLatest(owner, repo);
                 Match onlineVersionMatch = Regex.Match(release.TagName, @"(?<version>([0-9]+\.?)+)[^a-zA-Z]");
