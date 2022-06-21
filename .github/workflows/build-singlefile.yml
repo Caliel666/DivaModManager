@@ -15,7 +15,11 @@ jobs:
     steps:
       - name: Checkout and Initialise
         uses: actions/checkout@v2
-
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 5.0.x
+          
       - name: Build release
         run: dotnet publish -c Release -p:PublishSingleFile=true --self-contained false
 
