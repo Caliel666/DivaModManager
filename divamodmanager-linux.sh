@@ -58,6 +58,13 @@ command> ";
     cp "${tempfolder[@]}/DivaModManager.exe" "${dmm[@]}";
     cp "${wineprefix[@]}/drive_c/Program Files/dotnet/host/fxr/5.0.17/hostfxr.dll" "${dmm[@]}";
     rm -rf "${tempfolder[@]}";
+    sudo mkdir -p /usr/share/applications/;
+    sudo mkdir -p /usr/share/pixmaps/;
+    sudo mkdir -p /opt/divamodmanager;
+    chmod +x ./run_divamodmanager.sh;
+    sudo cp ./divamodmanager.desktop /usr/share/applications/;
+    sudo cp ./run_divamodmanager.sh /opt/divamodmanager;
+    sudo cp ./dmmlogo.png /usr/share/pixmaps/;
     fi
     if [ $REPLY == "no" ]; then
      clear;
@@ -91,6 +98,9 @@ yes/no
 command> ";
         if [ $REPLY == "yes" ]; then
             rm -rf "${modloader[@]}";
+            sudo rm -rf /usr/share/applications/divamodmanager.desktop;
+            sudo rm -rf /usr/share/pixmaps/dmmlogo.png;
+            
         fi 
         if [ $REPLY == "no" ]; then
      clear;
