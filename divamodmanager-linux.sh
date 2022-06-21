@@ -100,6 +100,7 @@ command> ";
             rm -rf "${modloader[@]}";
             sudo rm -rf /usr/share/applications/divamodmanager.desktop;
             sudo rm -rf /usr/share/pixmaps/dmmlogo.png;
+            sudo rm -rf /opt/divamodmanager;
             
         fi 
         if [ $REPLY == "no" ]; then
