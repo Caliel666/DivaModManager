@@ -19,7 +19,7 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: 5.0.x
-          
+
       - name: Build release
         run: dotnet publish -c Release -p:PublishSingleFile=true --self-contained false
 
@@ -29,5 +29,5 @@ jobs:
         with:
           name: DMM-singlefile-${{ github.sha }}
           path: |
-            DivaModManager/bin/Release/net6.0-windows/win10-x64/publish
-            !DivaModManager/bin/Release/net6.0-windows/win10-x64/publish/DivaModManager
+            DivaModManager/bin/Release/net5.0-windows/win10-x64/publish
+            !DivaModManager/bin/Release/net5.0-windows/win10-x64/publish/DivaModManager
