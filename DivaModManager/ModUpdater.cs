@@ -42,7 +42,7 @@ namespace DivaModManager
             }
             var cancellationToken = new CancellationTokenSource();
             var requestUrls = new Dictionary<string, List<string>>();
-            var mods = Directory.GetDirectories(path).Where(x => File.Exists($"{x}/mod.json")).ToList();
+            var mods = Directory.GetDirectories(path).Where(x => File.Exists($"{x}{Global.s}mod.json")).ToList();
             var modList = new Dictionary<string, List<string>>();
             var urlCounts = new Dictionary<string, int>();
             foreach (var mod in mods)
@@ -74,9 +74,9 @@ namespace DivaModManager
                         modList.Add(MOD_TYPE, new());
                     modList[MOD_TYPE].Add(mod);
                     if (!requestUrls.ContainsKey(MOD_TYPE))
-                        requestUrls.Add(MOD_TYPE, new string[] { $"https://gamebanana.com/apiv6/{MOD_TYPE}/Multi?_csvProperties=_sName,_bHasUpdates,_aLatestUpdates,_aFiles,_aPreviewMedia,_aAlternateFileSources&_csvRowIds=" }.ToList());
+                        requestUrls.Add(MOD_TYPE, new string[] { $"https://gamebanana.com/apiv6/{MOD_TYPE}/Multi?_csvProperties=_sName,_aSubmitter,_aCategory,_aSuperCategory,_sProfileUrl,_sDescription,_bHasUpdates,_aLatestUpdates,_aFiles,_aPreviewMedia,_aAlternateFileSources,_tsDateUpdated&_csvRowIds=" }.ToList());
                     else if (requestUrls[MOD_TYPE].Count == index)
-                        requestUrls[MOD_TYPE].Add($"https://gamebanana.com/apiv6/{MOD_TYPE}/Multi?_csvProperties=_sName,_bHasUpdates,_aLatestUpdates,_aFiles,_aPreviewMedia,_aAlternateFileSources&_csvRowIds=");
+                        requestUrls[MOD_TYPE].Add($"https://gamebanana.com/apiv6/{MOD_TYPE}/Multi?_csvProperties=_sName,_aSubmitter,_aCategory,_aSuperCategory,_sProfileUrl,_sDescription,_bHasUpdates,_aLatestUpdates,_aFiles,_aPreviewMedia,_aAlternateFileSources,_tsDateUpdated&_csvRowIds=");
                     requestUrls[MOD_TYPE][index] += $"{MOD_ID},";
                     if (requestUrls[MOD_TYPE][index].Length > 1990)
                         urlCounts[MOD_TYPE]++;
@@ -116,15 +116,15 @@ namespace DivaModManager
                 {
                     foreach (var requestUrl in type.Value)
                     {
-                        var responseString = await client.GetStringAsync(requestUrl);
                         try
                         {
+                            var responseString = await client.GetStringAsync(requestUrl);
                             var partialResponse = JsonSerializer.Deserialize<List<GameBananaAPIV4>>(responseString);
                             response = response.Concat(partialResponse).ToList();
                         }
                         catch (Exception e)
                         {
-                            Global.logger.WriteLine($"{requestUrl} {e.Message}", LoggerType.Error);
+                            Global.logger.WriteLine(e.Message, LoggerType.Error);
                             main.GameBox.IsEnabled = true;
                             main.ModGrid.IsEnabled = true;
                             main.ConfigButton.IsEnabled = true;
@@ -249,7 +249,6 @@ namespace DivaModManager
                     {
                         Global.logger.WriteLine($"An update is available for {Path.GetFileName(mod)} but no downloadable files are available directly from GameBanana.", LoggerType.Info);
                     }
-                    Uri uri = CreateUri(metadata.homepage.AbsoluteUri);
                     if (item.AlternateFileSources != null)
                     {
                         var choice = MessageBox.Show($"Alternate file sources were found for {Path.GetFileName(mod)}! Would you like to manually update?", "Diva Mod Manager", MessageBoxButton.YesNo, MessageBoxImage.Question);
@@ -261,7 +260,7 @@ namespace DivaModManager
                     }
                     if (downloadUrl != null && fileName != null)
                     {
-                        await DownloadFile(downloadUrl, fileName, mod, update.DateAdded, progress, cancellationToken);
+                        await DownloadFile(downloadUrl, fileName, mod, item, progress, cancellationToken);
                     }
                     else
                     {
@@ -270,7 +269,7 @@ namespace DivaModManager
                 }
             }
         }
-        private static async Task DownloadFile(string uri, string fileName, string mod, DateTime updateTime, Progress<DownloadProgress> progress, CancellationTokenSource cancellationToken)
+        private static async Task DownloadFile(string uri, string fileName, string mod, GameBananaAPIV4 item, Progress<DownloadProgress> progress, CancellationTokenSource cancellationToken)
         {
             try
             {
@@ -304,8 +303,11 @@ namespace DivaModManager
                     await client.DownloadAsync(uri, fs, fileName, progress, cancellationToken.Token);
                 }
                 progressBox.Close();
-                ClearDirectory(mod);
-                await Task.Run(() => ExtractFile(fileName, mod, updateTime));
+                await Task.Run(() =>
+                {
+                    ClearDirectory(mod);
+                    ExtractFile(fileName, mod, item);
+                });
             }
             catch (OperationCanceledException)
             {
@@ -345,7 +347,7 @@ namespace DivaModManager
                 di.Delete();
             }
         }
-        private static void ExtractFile(string fileName, string output, DateTime updateTime)
+        private static void ExtractFile(string fileName, string output, GameBananaAPIV4 item)
         {
             string _ArchiveSource = $@"{Global.assemblyLocation}{Global.s}Downloads{Global.s}{fileName}";
             string ArchiveDestination = $@"{Global.assemblyLocation}{Global.s}temp";
@@ -403,7 +405,15 @@ namespace DivaModManager
                 if (File.Exists($@"{output}{Global.s}mod.json"))
                 {
                     var metadata = JsonSerializer.Deserialize<Metadata>(File.ReadAllText($@"{output}{Global.s}mod.json"));
-                    metadata.lastupdate = updateTime;
+                    metadata.submitter = item.Owner.Name;
+                    metadata.description = item.Description;
+                    metadata.preview = item.Image;
+                    metadata.homepage = item.Link;
+                    metadata.avi = item.Owner.Avatar;
+                    metadata.upic = item.Owner.Upic;
+                    metadata.cat = item.CategoryName;
+                    metadata.caticon = item.Category.Icon;
+                    metadata.lastupdate = item.DateUpdated;
                     string metadataString = JsonSerializer.Serialize(metadata, new JsonSerializerOptions { WriteIndented = true });
                     File.WriteAllText($@"{output}{Global.s}mod.json", metadataString);
                 }
