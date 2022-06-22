@@ -1,7 +1,7 @@
 [Desktop Entry]
 Encoding=UTF-8
 Name=DivaModManager
-Exec=/opt/divamodmanager/run_divamodmanager.sh
+Exec=run_divamodmanager.sh
 Type=Application
 StartupNotify=true
 Terminal=false
