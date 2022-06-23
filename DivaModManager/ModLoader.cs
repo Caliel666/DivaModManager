@@ -6,22 +6,60 @@ using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 using Tomlyn;
+using System.Threading.Tasks;
 
 namespace DivaModManager
 {
     public static class ModLoader
     {
-        public static void Build(List<Mod> mods)
+        public static void Build()
         {
             var configPath = $"{Path.GetDirectoryName(Global.config.Configs[Global.config.CurrentGame].ModsFolder)}{Global.s}config.toml";
-            var configString = File.ReadAllText(configPath);
+            if (!File.Exists(configPath))
+            {
+                Global.logger.WriteLine($"Unable to find {configPath}", LoggerType.Error);
+                return;
+            }
+            var configString = String.Empty;
+            while (String.IsNullOrEmpty(configString))
+            {
+                try
+                {
+                    configString = File.ReadAllText(configPath);
+                }
+                catch (Exception e)
+                {
+                    // Check if the exception is related to an IO error.
+                    if (e.GetType() != typeof(IOException))
+                    {
+                        Global.logger.WriteLine($"Couldn't access {configPath} ({e.Message})", LoggerType.Error);
+                        break;
+                    }
+                }
+            }
             var config = Toml.ToModel(configString);
             var priorityList = new List<string>();
-            foreach (var mod in mods)
+            foreach (var mod in Global.config.Configs[Global.config.CurrentGame].Loadouts[Global.config.Configs[Global.config.CurrentGame].CurrentLoadout].Where(x => x.enabled).ToList())
                 priorityList.Add(mod.name);
             config["priority"] = priorityList.ToArray();
-            File.WriteAllText(configPath, Toml.FromModel(config));
-            Global.logger.WriteLine("Finished saving!", LoggerType.Info);
+            var isReady = false;
+            while (!isReady)
+            {
+                try
+                {
+                    File.WriteAllText(configPath, Toml.FromModel(config));
+                    isReady = true;
+                }
+                catch (Exception e)
+                {
+                    // Check if the exception is related to an IO error.
+                    if (e.GetType() != typeof(IOException))
+                    {
+                        Global.logger.WriteLine($"Couldn't access {configPath} ({e.Message})", LoggerType.Error);
+                        break;
+                    }
+                }
+            }
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
@@ -34,8 +35,6 @@ namespace DivaModManager
     public partial class MainWindow : Window
     {
         public string version;
-        // Separated from Global.config so that order is updated when datagrid is modified
-        public List<string> exes;
         private FileSystemWatcher ModsWatcher;
         private FlowDocument defaultFlow = new FlowDocument();
         private string defaultText = "Welcome to Diva Mod Manager!\n\n" +
@@ -125,7 +124,10 @@ namespace DivaModManager
 
             if (String.IsNullOrEmpty(Global.config.Configs[Global.config.CurrentGame].ModsFolder)
                 || !Directory.Exists(Global.config.Configs[Global.config.CurrentGame].ModsFolder))
-                Global.logger.WriteLine("Please click Setup before installing mods!", LoggerType.Warning);
+            {
+                if (Global.config.Configs[Global.config.CurrentGame].FirstOpen)
+                    Global.logger.WriteLine("Please click Setup before installing mods!", LoggerType.Warning);
+            }
             else
             {
                 // Watch mods folder to detect
@@ -146,7 +148,6 @@ namespace DivaModManager
             GameBox.IsEnabled = false;
             ModGrid.IsEnabled = false;
             ConfigButton.IsEnabled = false;
-            BuildButton.IsEnabled = false;
             LaunchButton.IsEnabled = false;
             OpenModsButton.IsEnabled = false;
             UpdateButton.IsEnabled = false;
@@ -191,7 +192,8 @@ namespace DivaModManager
             if (String.IsNullOrEmpty(Global.config.Configs[Global.config.CurrentGame].ModsFolder)
                 || !Directory.Exists(Global.config.Configs[Global.config.CurrentGame].ModsFolder))
             {
-                Global.logger.WriteLine("Please click Setup before installing mods!", LoggerType.Warning);
+                if (Global.config.Configs[Global.config.CurrentGame].FirstOpen)
+                    Global.logger.WriteLine("Please click Setup before installing mods!", LoggerType.Warning);
                 return;
             }
             var currentModDirectory = Global.config.Configs[Global.config.CurrentGame].ModsFolder;
@@ -270,7 +272,7 @@ namespace DivaModManager
                 {
                     ModGrid.ItemsSource = Global.ModList;
                     ModGrid.Items.Refresh();
-                    var stats = $"{Global.ModList.Count} mods • {Directory.GetFiles(currentModDirectory, "*", SearchOption.AllDirectories).Length.ToString("N0")} files • " +
+                    var stats = $"{Global.ModList.ToList().Where(x => x.enabled).ToList().Count}/{Global.ModList.Count} mods • {Directory.GetFiles(currentModDirectory, "*", SearchOption.AllDirectories).Length.ToString("N0")} files • " +
                     $"{StringConverters.FormatSize(new DirectoryInfo(currentModDirectory).GetDirectorySize())}";
                     if (!String.IsNullOrEmpty(Global.config.Configs[Global.config.CurrentGame].ModLoaderVersion))
                         stats += $" • DML v{Global.config.Configs[Global.config.CurrentGame].ModLoaderVersion}";
@@ -279,11 +281,12 @@ namespace DivaModManager
                 });
             });
             Global.UpdateConfig();
+            await Task.Run(() => ModLoader.Build());
             Global.logger.WriteLine("Refreshed!", LoggerType.Info);
         }
 
         // Events for Enabled checkboxes
-        private void OnChecked(object sender, RoutedEventArgs e)
+        private async void OnChecked(object sender, RoutedEventArgs e)
         {
             var checkBox = e.OriginalSource as CheckBox;
 
@@ -321,9 +324,20 @@ namespace DivaModManager
                 }
                 Global.config.Configs[Global.config.CurrentGame].Loadouts[Global.config.Configs[Global.config.CurrentGame].CurrentLoadout] = new ObservableCollection<Mod>(temp);
                 Global.UpdateConfig();
+                await Task.Run(() => ModLoader.Build());
+
+                App.Current.Dispatcher.Invoke((Action)delegate
+                {
+                    var stats = $"{Global.ModList.ToList().Where(x => x.enabled).ToList().Count}/{Global.ModList.Count} mods • {Directory.GetFiles(Global.config.Configs[Global.config.CurrentGame].ModsFolder, "*", SearchOption.AllDirectories).Length.ToString("N0")} files • " +
+                    $"{StringConverters.FormatSize(new DirectoryInfo(Global.config.Configs[Global.config.CurrentGame].ModsFolder).GetDirectorySize())}";
+                    if (!String.IsNullOrEmpty(Global.config.Configs[Global.config.CurrentGame].ModLoaderVersion))
+                        stats += $" • DML v{Global.config.Configs[Global.config.CurrentGame].ModLoaderVersion}";
+                    stats += $" • DMM v{version}";
+                    Stats.Text = stats;
+                });
             }
         }
-        private void OnUnchecked(object sender, RoutedEventArgs e)
+        private async void OnUnchecked(object sender, RoutedEventArgs e)
         {
             var checkBox = e.OriginalSource as CheckBox;
 
@@ -361,12 +375,23 @@ namespace DivaModManager
                 }
                 Global.config.Configs[Global.config.CurrentGame].Loadouts[Global.config.Configs[Global.config.CurrentGame].CurrentLoadout] = new ObservableCollection<Mod>(temp);
                 Global.UpdateConfig();
+                await Task.Run(() => ModLoader.Build());
+                App.Current.Dispatcher.Invoke((Action)delegate
+                {
+                    var stats = $"{Global.ModList.ToList().Where(x => x.enabled).ToList().Count}/{Global.ModList.Count} mods • {Directory.GetFiles(Global.config.Configs[Global.config.CurrentGame].ModsFolder, "*", SearchOption.AllDirectories).Length.ToString("N0")} files • " +
+                    $"{StringConverters.FormatSize(new DirectoryInfo(Global.config.Configs[Global.config.CurrentGame].ModsFolder).GetDirectorySize())}";
+                    if (!String.IsNullOrEmpty(Global.config.Configs[Global.config.CurrentGame].ModLoaderVersion))
+                        stats += $" • DML v{Global.config.Configs[Global.config.CurrentGame].ModLoaderVersion}";
+                    stats += $" • DMM v{version}";
+                    Stats.Text = stats;
+                });
             }
         }
         // Triggered when priority is switched on drag and dropped
-        private void ModGrid_LoadingRow(object sender, DataGridRowEventArgs e)
+        private async void ModGrid_LoadingRow(object sender, DataGridRowEventArgs e)
         {
             Global.UpdateConfig();
+            await Task.Run(() => ModLoader.Build());
         }
 
         private bool SetupGame()
@@ -407,7 +432,7 @@ namespace DivaModManager
                 if (!String.IsNullOrEmpty(Global.config.Configs[Global.config.CurrentGame].ModsFolder)
                     || !String.IsNullOrEmpty(Global.config.Configs[Global.config.CurrentGame].Launcher) && File.Exists(Global.config.Configs[Global.config.CurrentGame].Launcher))
                 {
-                    var dialogResult = MessageBox.Show($@"Setup again?", $@"Notification", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                    var dialogResult = MessageBox.Show($@"Run setup again?", $@"Notification", MessageBoxButton.YesNo, MessageBoxImage.Question);
                     if (dialogResult == MessageBoxResult.No)
                     {
                         Dispatcher.Invoke(() =>
@@ -433,43 +458,6 @@ namespace DivaModManager
                 }
             });
             GameBox.IsEnabled = true;
-        }
-        private async void Build_Click(object sender, RoutedEventArgs e)
-        {
-            if (Global.config.Configs[Global.config.CurrentGame].ModsFolder != null)
-            {
-                GameBox.IsEnabled = false;
-                ModGrid.IsEnabled = false;
-                ConfigButton.IsEnabled = false;
-                BuildButton.IsEnabled = false;
-                LaunchButton.IsEnabled = false;
-                OpenModsButton.IsEnabled = false;
-                UpdateButton.IsEnabled = false;
-                LauncherOptionsBox.IsEnabled = false;
-                LoadoutBox.IsEnabled = false;
-                EditLoadoutsButton.IsEnabled = false;
-                Refresh();
-                Directory.CreateDirectory(Global.config.Configs[Global.config.CurrentGame].ModsFolder);
-                Global.logger.WriteLine($"Saving loadout for {Global.config.CurrentGame}", LoggerType.Info);
-
-                var mods = Global.config.Configs[Global.config.CurrentGame].Loadouts[Global.config.Configs[Global.config.CurrentGame].CurrentLoadout].Where(x => x.enabled).ToList();
-                await Task.Run(() => ModLoader.Build(mods));
-                ModGrid.IsEnabled = true;
-                ConfigButton.IsEnabled = true;
-                BuildButton.IsEnabled = true;
-                LaunchButton.IsEnabled = true;
-                OpenModsButton.IsEnabled = true;
-                UpdateButton.IsEnabled = true;
-                GameBox.IsEnabled = true;
-                LauncherOptionsBox.IsEnabled = true;
-                LoadoutBox.IsEnabled = true;
-                EditLoadoutsButton.IsEnabled = true;
-            }
-            else
-            {
-                Global.logger.WriteLine("Please click Setup before saving!", LoggerType.Warning);
-                return;
-            }
         }
         private void Launch_Click(object sender, RoutedEventArgs e)
         {
@@ -638,7 +626,7 @@ namespace DivaModManager
                     }
                 }
         }
-        private void EditItem_Click(object sender, RoutedEventArgs e)
+        private async void EditItem_Click(object sender, RoutedEventArgs e)
         {
             var selectedMods = ModGrid.SelectedItems;
             var temp = new Mod[selectedMods.Count];
@@ -655,6 +643,8 @@ namespace DivaModManager
             ModsWatcher.EnableRaisingEvents = true;
             Global.UpdateConfig();
             ModGrid.Items.Refresh();
+
+            await Task.Run(() => ModLoader.Build());
         }
         private void ConfigureModItem_Click(object sender, RoutedEventArgs e)
         {
@@ -816,7 +806,6 @@ namespace DivaModManager
             GameBox.IsEnabled = false;
             ModGrid.IsEnabled = false;
             ConfigButton.IsEnabled = false;
-            BuildButton.IsEnabled = false;
             LaunchButton.IsEnabled = false;
             OpenModsButton.IsEnabled = false;
             UpdateButton.IsEnabled = false;
@@ -1762,7 +1751,7 @@ namespace DivaModManager
                 Global.UpdateConfig();
             }
         }
-        private void LoadoutsBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void LoadoutsBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (!IsLoaded)
                 return;
@@ -1780,6 +1769,7 @@ namespace DivaModManager
                 Global.ModList = Global.config.Configs[Global.config.CurrentGame].Loadouts[Global.config.Configs[Global.config.CurrentGame].CurrentLoadout];
                 Refresh();
                 Global.logger.WriteLine($"Loadout changed to {LoadoutBox.SelectedItem}", LoggerType.Info);
+                await Task.Run(() => ModLoader.Build());
             }
         }
         private void EditLoadouts_Click(object sender, RoutedEventArgs e)
@@ -1874,7 +1864,9 @@ namespace DivaModManager
                     Global.config.Configs[Global.config.CurrentGame].Loadouts.Add(Global.config.Configs[Global.config.CurrentGame].CurrentLoadout, new());
                 }
                 else
+                {
                     Global.ModList = Global.config.Configs[Global.config.CurrentGame].Loadouts[Global.config.Configs[Global.config.CurrentGame].CurrentLoadout];
+                }
                 var currentModDirectory = Global.config.Configs[Global.config.CurrentGame].ModsFolder;
                 Directory.CreateDirectory(currentModDirectory);
                 ModsWatcher.Path = currentModDirectory;
@@ -1948,6 +1940,7 @@ namespace DivaModManager
                     });
                 });
                 Global.UpdateConfig();
+                await Task.Run(() => ModLoader.Build());
             }
             e.Handled = true;
         }
