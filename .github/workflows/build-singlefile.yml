@@ -23,11 +23,14 @@ jobs:
       - name: Build release
         run: dotnet publish -c Release -p:PublishSingleFile=true --self-contained false
 
+      - name: Clean up
+        run: del DivaModManager\bin\Release\net5.0-windows\win10-x64\publish\DivaModManager.pdb
+
       # Upload build artifact
       - name: Upload Artifact
         uses: actions/upload-artifact@v3.0.0
         with:
-          name: DMM-singlefile-${{ github.sha }}
+          name: DivaModManager
           path: |
             DivaModManager/bin/Release/net5.0-windows/win10-x64/publish
             !DivaModManager/bin/Release/net5.0-windows/win10-x64/publish/DivaModManager
