@@ -56,7 +56,7 @@ command> ";
     mkdir -p "${tempfolder[@]}";
     mkdir -p "${dmm[@]}";
     mkdir -p "${wine[@]}";
-    wget https://github.com/GloriousEggroll/wine-ge-custom/releases/latest/download/wine-lutris-GE-Proton7-16-x86_64.tar.xz;
+    wget https://github.com/GloriousEggroll/wine-ge-custom/releases/download/GE-Proton7-16/wine-lutris-GE-Proton7-16-x86_64.tar.xz;
     tar -xJv -f "./wine-lutris-GE-Proton7-16-x86_64.tar.xz";
     mv ./lutris-GE-Proton7-16-x86_64/ "${wine[@]}";
     wget https://download.visualstudio.microsoft.com/download/pr/3aa4e942-42cd-4bf5-afe7-fc23bd9c69c5/64da54c8864e473c19a7d3de15790418/windowsdesktop-runtime-5.0.17-win-x64.exe -P "${tempfolder[@]}";
