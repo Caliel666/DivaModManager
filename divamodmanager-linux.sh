@@ -60,7 +60,7 @@ command> ";
     tar -xJv -f "./wine-lutris-GE-Proton7-16-x86_64.tar.xz";
     mv ./lutris-GE-Proton7-16-x86_64/ "${wine[@]}";
     wget https://download.visualstudio.microsoft.com/download/pr/3aa4e942-42cd-4bf5-afe7-fc23bd9c69c5/64da54c8864e473c19a7d3de15790418/windowsdesktop-runtime-5.0.17-win-x64.exe -P "${tempfolder[@]}";
-    WINEPREFIX="${wineprefix[@]}" "${wine[@]}/lutris-GE-Proton7-16-x86_64/bin/wine64" "${tempfolder[@]}/"windowsdesktop-runtime-5.0.17-win-x64.exe;
+    WINEPREFIX="${wineprefix[@]}" "${wine[@]}/lutris-GE-Proton7-16-x86_64/bin/wine64" "${tempfolder[@]}/"windowsdesktop-runtime-5.0.17-win-x64.exe /install /quiet;
     wget https://github.com/Caliel666/DivaModManager/releases/latest/download/DivaModManager.zip;
     unzip "DivaModManager.zip" -d "${dmm[@]}";
     cp "${wineprefix[@]}/drive_c/Program Files/dotnet/host/fxr/5.0.17/hostfxr.dll" "${dmm[@]}";
