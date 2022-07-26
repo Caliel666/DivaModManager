@@ -1,3 +1,5 @@
+# Before you use this, go see issue [#4](https://github.com/Caliel666/DivaModManager/issues/4)
+
 # [<img alt="Musicdex" width="40px" src="https://raw.githubusercontent.com/Caliel666/DivaModManager/linuxinstallscript/dmmlogo.png" width="40" height="40" align="right"/>](https://github.com/TekkaGB/DivaModManager) What is this?
 this is a script that sets up the mod manager on linux using wine
 
