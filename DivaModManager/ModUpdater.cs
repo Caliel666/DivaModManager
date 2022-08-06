@@ -299,6 +299,8 @@ namespace DivaModManager
                     }
                 }
             }
+            else if (item.HasUpdates == null)
+                Global.logger.WriteLine($"{mod} was most likely trashed by the creator and cannot receive anymore updates", LoggerType.Warning);
         }
         private static async Task ModUpdate(DivaModArchivePost item, string mod, Metadata metadata, Progress<DownloadProgress> progress, CancellationTokenSource cancellationToken)
         {
